@@ -1,0 +1,19 @@
+.dinnerfy-range-highlight, .react-calendar__tile--range.dinnerfy-range-highlight {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 3px solid #1976d2 !important;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 3;
+}
+.dinnerfy-range-highlight:hover, .react-calendar__tile--range.dinnerfy-range-highlight:hover {
+  background: #1565c0 !important;
+}
+.react-calendar__tile--rangeStart.dinnerfy-range-highlight {
+  border-top-left-radius: 18px !important;
+  border-bottom-left-radius: 18px !important;
+}
+.react-calendar__tile--rangeEnd.dinnerfy-range-highlight {
+  border-top-right-radius: 18px !important;
+  border-bottom-right-radius: 18px !important;
+}

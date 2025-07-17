@@ -1,0 +1,84 @@
+.recipecard-modal-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recipecard-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 24px 24px 24px;
+  min-width: 340px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  position: relative;
+}
+.recipecard-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 2em;
+  color: #888;
+  cursor: pointer;
+}
+.recipecard-title {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.4em;
+}
+.recipecard-title-input {
+  font-size: 1.2em;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 4px;
+}
+.recipecard-section {
+  margin-bottom: 18px;
+}
+.recipecard-ing-input {
+  width: 70%;
+  margin-right: 8px;
+  padding: 3px;
+}
+.recipecard-add, .recipecard-remove, .recipecard-edit, .recipecard-save, .recipecard-cancel {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #1976d2;
+  background: #e3f0ff;
+  color: #1976d2;
+  font-weight: 600;
+  cursor: pointer;
+}
+.recipecard-remove {
+  border-color: #c62828;
+  color: #c62828;
+  background: #ffeaea;
+}
+.recipecard-save {
+  background: #1976d2;
+  color: #fff;
+}
+.recipecard-cancel {
+  background: #eee;
+  color: #666;
+}
+.recipecard-recipe-input {
+  width: 100%;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: 1em;
+  padding: 6px;
+}
+.recipecard-recipe {
+  white-space: pre-wrap;
+  background: #f9f9f9;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 1em;
+}
