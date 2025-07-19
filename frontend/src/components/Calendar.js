@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Calendar.css';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import { API_BASE } from '../config';
 
 function getMonthString(date) {
   // Returns YYYY-MM for a JS Date
@@ -82,7 +83,7 @@ function CalendarComponent() {
     setAssignError(null);
     try {
       // Always fetch latest dinners before random assignment
-      const dinnersResp = await fetch('http://localhost:5000/dinners');
+      const dinnersResp = await fetch(`${API_BASE}/dinners`);
       const latestDinners = await dinnersResp.json();
       if (!latestDinners.length) throw new Error('No dinners available');
       const [year, month] = activeMonth.split('-').map(Number);
@@ -95,12 +96,16 @@ function CalendarComponent() {
       let assignPromises = [];
       for (let d = 1; d <= daysInMonth; d++) {
         const dinner = shuffled[(d - 1) % shuffled.length];
+        if (!dinner || dinner.id == null) {
+          console.warn('Skipping invalid dinner during randomization:', dinner);
+          continue;
+        }
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         assignPromises.push(
-          fetch('http://localhost:5000/assignments', {
+          fetch('http://localhost:5000/api/assignments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: dateStr, dinner_id: dinner.id })
+            body: JSON.stringify({ date: dateStr, dinner_id: Number(dinner.id) })
           })
         );
       }
@@ -117,7 +122,7 @@ function CalendarComponent() {
     setAssignError(null);
     try {
       // Always fetch latest dinners before random assignment
-      const dinnersResp = await fetch('http://localhost:5000/dinners');
+      const dinnersResp = await fetch(`${API_BASE}/dinners`);
       const latestDinners = await dinnersResp.json();
       if (!latestDinners.length || !start || !end) throw new Error('No dinners available');
       const startDate = new Date(start);
@@ -135,12 +140,16 @@ function CalendarComponent() {
       let assignPromises = [];
       for (let i = 0; i < dates.length; i++) {
         const dinner = shuffled[i % shuffled.length];
+        if (!dinner || dinner.id == null) {
+          console.warn('Skipping invalid dinner during range randomization:', dinner);
+          continue;
+        }
         const dateStr = getDateString(dates[i]);
         assignPromises.push(
-          fetch('http://localhost:5000/assignments', {
+          fetch('http://localhost:5000/api/assignments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: dateStr, dinner_id: dinner.id })
+            body: JSON.stringify({ date: dateStr, dinner_id: Number(dinner.id) })
           })
         );
       }
@@ -163,23 +172,38 @@ function CalendarComponent() {
     if (!dinnerId) return;
     setAssigning(true);
     setAssignError(null);
-    fetch('http://localhost:5000/assignments', {
+    
+    // Get the dinner name for optimistic update
+    const dinner = dinners.find(d => d.id == dinnerId);
+    const dateStr = getDateString(date);
+    
+    // Optimistic update
+    setAssignments(prev => ({
+      ...prev,
+      [dateStr]: dinner ? dinner.name : 'Dinner'
+    }));
+    
+    fetch('http://localhost:5000/api/assignments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: getDateString(date), dinner_id: dinnerId })
+      body: JSON.stringify({ date: dateStr, dinner_id: dinnerId })
     })
       .then(res => {
         if (!res.ok) throw new Error('Failed to assign dinner');
         return res.json();
       })
       .then(() => {
+        // Refresh to ensure sync with server
         setReloadAssignments(r => r + 1);
-        setAssigning(false);
-        setSelectedDinnerId('');
       })
       .catch(err => {
+        // Revert optimistic update on error
+        setReloadAssignments(r => r + 1);
         setAssignError(err.message);
+      })
+      .finally(() => {
         setAssigning(false);
+        setSelectedDinnerId('');
       });
   }
 
@@ -222,24 +246,37 @@ function CalendarComponent() {
     if (!selectedDinnerId) return;
     setAssigning(true);
     setAssignError(null);
-    fetch('http://localhost:5000/assignments', {
+    
+    const dateStr = getDateString(date);
+    const dinner = dinners.find(d => d.id == selectedDinnerId);
+    
+    // Optimistic update
+    setAssignments(prev => ({
+      ...prev,
+      [dateStr]: dinner ? dinner.name : 'Dinner'
+    }));
+    
+    fetch('http://localhost:5000/api/assignments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: getDateString(date), dinner_id: selectedDinnerId })
+      body: JSON.stringify({ date: dateStr, dinner_id: selectedDinnerId })
     })
       .then(res => {
         if (!res.ok) throw new Error('Failed to assign dinner');
         return res.json();
       })
       .then(() => {
-        // Refresh assignments without reload
+        // Refresh to ensure sync with server
         setReloadAssignments(r => r + 1);
-        setAssigning(false);
-        setSelectedDinnerId('');
       })
       .catch(err => {
+        // Revert optimistic update on error
+        setReloadAssignments(r => r + 1);
         setAssignError(err.message);
+      })
+      .finally(() => {
         setAssigning(false);
+        setSelectedDinnerId('');
       });
   }
 

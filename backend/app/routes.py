@@ -77,8 +77,53 @@ def delete_dinner(dinner_id):
             'message': f'Failed to delete dinner: {str(e)}'
         }), 500
 
-@routes.route('/assignments', methods=['GET'])
-def get_assignments():
+@routes.route('/assignments', methods=['GET', 'POST', 'DELETE'])
+def handle_assignments():
+    if request.method == 'POST':
+        # Handle POST request to create/update an assignment
+        data = request.get_json()
+        date = data.get('date')
+        dinner_id = data.get('dinner_id')
+        try:
+            dinner_id_int = int(dinner_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid dinner_id'}), 400
+        
+        if not date or not dinner_id:
+            return jsonify({'error': 'Both date and dinner_id are required'}), 400
+            
+        # Check if dinner exists
+        dinner = Dinner.query.get(dinner_id_int)
+        if not dinner:
+            return jsonify({'error': 'Dinner not found'}), 404
+            
+        # Check if assignment already exists for this date
+        assignment = DinnerAssignment.query.filter_by(date=date).first()
+        if assignment:
+            # Update existing assignment
+            assignment.dinner_id = dinner_id_int
+        else:
+            # Create new assignment
+            assignment = DinnerAssignment(date=date, dinner_id=dinner_id_int)
+            db.session.add(assignment)
+            
+        db.session.commit()
+        return jsonify(assignment.to_dict()), 201
+    
+    # Handle DELETE request
+    if request.method == 'DELETE':
+        date = request.args.get('date')
+        if not date:
+            return jsonify({'error': 'Date parameter is required for DELETE'}), 400
+            
+        assignment = DinnerAssignment.query.filter_by(date=date).first()
+        if assignment:
+            db.session.delete(assignment)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Assignment deleted'})
+        return jsonify({'error': 'Assignment not found'}), 404
+    
+    # Handle GET request
     date = request.args.get('date')
     month = request.args.get('month')
     
@@ -97,7 +142,7 @@ def get_assignments():
     else:
         return jsonify({'error': 'Must provide either date or month parameter'}), 400
 
-@routes.route('/assignments/all', methods=['GET'])
+@routes.route('assignments/all', methods=['GET'])
 def get_all_assignments():
     # Debug endpoint to list all assignments
     assignments = DinnerAssignment.query.all()
@@ -108,7 +153,7 @@ def get_all_assignments():
         'dinner_name': a.dinner.name if a.dinner else None
     } for a in assignments])
 
-@routes.route('/assignments/clear', methods=['POST'])
+@routes.route('assignments/clear', methods=['POST'])
 def clear_assignments():
     try:
         # Delete all assignments
